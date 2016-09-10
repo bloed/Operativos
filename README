@@ -1,3 +1,8 @@
 Se necesita para instalar en UBUNTU esta librería: sudo apt-get install libncurses5-dev libncursesw5-dev
 
-para compilar : gcc cliente.c -lncurses -pthread
+Para compilar se debe estar en cualquiera de las dos carpetas (cliente o server) y se utiliza: make
+
+Para ejecutar se debe estar en sus carpetas respectivas y el server se debe ejecutar primero.
+
+Para correr el cliente se utiliza: ./cliente
+Para correr el servidor se utiliza: ./server

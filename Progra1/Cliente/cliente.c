@@ -7,6 +7,13 @@
 #include <ncurses.h>
 #include <pthread.h>
 
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h> //Data types for system calls
+#include <sys/socket.h> //Lib for sockets
+#include <netinet/in.h> //internet domain addresses, not sutre if needed
+#include <netdb.h>
+
 //Variables Globales:
 char tipoCliente[1];
 char pathArchivo[20];
@@ -17,6 +24,8 @@ int contadorThreads = 0;
 int variablesThreads[100][3];
 int activeThreads = 0;
 
+
+int main();
 
 main(){
 	srand(time(NULL));
@@ -97,6 +106,11 @@ void *accionThread(void *pointer){
 		sleep(1);
 		tiempoRestante--;
 	}
+
+	printf("Finaliza Thread");
+
+	socketConnection(); //prueba
+
 	printf("Finaliza Thread %d\n", idThread);
 	activeThreads--;
 	return NULL; //finaliza thread
@@ -150,4 +164,64 @@ mainManual(){
 	while(activeThreads != 0){
 		int cacaConCarne;
 	}
+}
+
+void socketConnection(){
+	int socketCon; 
+	int portNumber = 1234;
+	int n; // value of the write and read
+
+	struct hostent *server; //pointer to struct on hader file metdb.h, defines a host computer on the internet.
+    struct sockaddr_in serverAddress; //
+
+    
+
+    socketCon = socket(AF_INET, SOCK_STREAM, 0);
+    if (socketCon < 0) 
+        error("ERROR opening socket");
+    
+    server = (struct hostent *) gethostbyname("localhost");
+
+    if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host\n");
+        exit(0);
+    }
+
+    bzero((char *) &serverAddress, sizeof(serverAddress)); //zeros on the struct
+
+    //assign value to he struct
+    serverAddress.sin_family = AF_INET;
+    //copies character string values from one struct to another
+    bcopy((char *)server->h_addr, 
+         (char *)&serverAddress.sin_addr.s_addr,
+         server->h_length);
+
+    serverAddress.sin_port = htons(portNumber);
+
+    //establishes connection, error if not
+    if (connect(socketCon,(struct sockaddr *) &serverAddress,sizeof(serverAddress)) < 0) 
+        error("ERROR connecting");
+
+    char buffer[256] = "Proceso X!"; //aqui seria el mensaje
+    
+    n = write(socketCon,buffer,strlen(buffer));
+    if (n < 0) 
+         error("ERROR writing to socket");
+
+    bzero(buffer,256);
+    
+    n = read(socketCon,buffer,255);
+    
+    if (n < 0) 
+         error("ERROR reading from socket");
+    
+    printf("%s\n",buffer);
+    
+    close(socketCon);
+}
+
+void error(const char *msg) //called when system call fails.
+{
+    perror(msg);
+    exit(0);
 }
