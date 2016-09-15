@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <sys/select.h>
 #include <ncurses.h>
 #include <pthread.h>
@@ -18,6 +17,7 @@
 char tipoCliente[1];
 char pathArchivo[20];
 char bufferArchivo[30];
+char bufferMensaje[50]; //Datos enviados del proceso
 int infoProcesos[3];//contiene PID, BURST, PRIORIDAD
 pthread_t threads[100];
 int contadorThreads = 0;
@@ -41,10 +41,11 @@ void error(const char *msg);
 typedef struct node {
     int pid;
     int burst;
+    
     int prioridad;
     int tat;
     int wt;
-    int estado; //1 ejecución, 0 terminado
+    int estado; //1 ejecución, 0 terminado, 2 Run.  
     struct node *next;
 } node_t;
 
@@ -173,17 +174,12 @@ void quitaN(char *string, size_t n){
 
 void *accionThread(void *pointer){
 	int idThread = (intptr_t) pointer;
-	//lo que viene es una pequeña prueba, aquí ser haría la conexión al socket
-	int tiempoRestante = variablesThreads[idThread][1];
-	while(tiempoRestante != 0){
-		printf("Thread %d, le faltan %d segundos.\n", idThread, tiempoRestante);
-		sleep(1);
-		tiempoRestante--;
-	}
 
-	printf("Finaliza Thread");
+	int pID = variablesThreads[idThread][0];
+	int burst = variablesThreads[idThread][1];
+	int prioridad = variablesThreads[idThread][2];
 
-	socketConnection(); //prueba
+	socketConnection(pID,burst,prioridad);
 
 	printf("Finaliza Thread %d\n", idThread);
 	activeThreads--;
@@ -210,7 +206,7 @@ void mainAutomatico(){
 		c = getch();
 		endwin();
 
-		sleep(rand() % 3 + 1);//random de 1 a 3 segundos
+		sleep(rand() % 10 + 1);//random de 1 a 10 segundos
 		infoProcesos[0] = contador;
 		contador++;
 		infoProcesos[1]= rand() % 20 + 1; //burst random de 1 a 20 segundos
@@ -229,7 +225,7 @@ int mainManual(){
    }
    else{
 	   while(fgets(bufferArchivo, 30, (FILE*)fp) != NULL){
-		    sleep(rand() % 3 + 1);//random de 1 a 3 segundos
+		    sleep(rand() % 10 + 1);//random de 1 a 10 segundos
 		    procesarString();
 		    generarThread();
 	    }
@@ -247,7 +243,7 @@ int mainManual(){
 	printList(list);
 }
 
-void socketConnection(){
+void socketConnection(int pID, int burst, int prioridad){
 	int socketCon; 
 	int portNumber = 1234;
 	int n; // value of the write and read
@@ -279,24 +275,32 @@ void socketConnection(){
 
     serverAddress.sin_port = htons(portNumber);
 
+    char auxiliar[50];
+	char message[50];
+
+    sprintf(auxiliar,"PID: %d ",pID);
+    strcat(message,auxiliar);
+    bzero(auxiliar,50);
+
+    sprintf(auxiliar,"Burst: %d ",burst);
+    strcat(message,auxiliar);
+    bzero(auxiliar,50);
+
+    sprintf(auxiliar,"Prioridad: %d ",prioridad);
+   	strcat(message,auxiliar);
+
+   	printf("Pid: %d Burst: %d Prioridad: %d",pID, burst, prioridad);
+
     //establishes connection, error if not
     if (connect(socketCon,(struct sockaddr *) &serverAddress,sizeof(serverAddress)) < 0) 
         error("ERROR connecting");
 
-    char buffer[256] = "Proceso X!"; //aqui seria el mensaje
     
-    n = write(socketCon,buffer,strlen(buffer));
+    n = write(socketCon,message,strlen(message));
     if (n < 0) 
          error("ERROR writing to socket");
-
-    bzero(buffer,256);
     
-    n = read(socketCon,buffer,255);
-    
-    if (n < 0) 
-         error("ERROR reading from socket");
-    
-    printf("%s\n",buffer);
+    printf("Message Sent \n");
     
     close(socketCon);
 }

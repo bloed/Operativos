@@ -1,7 +1,7 @@
 #Edit to change compiled program name
 TARGET = server
 
-LIBS = -lm
+LIBS = -lncurses -pthread
 CC = gcc
 CFLAGS = -std=gnu99
 
