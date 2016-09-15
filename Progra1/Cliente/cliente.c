@@ -26,8 +26,82 @@ int activeThreads = 0;
 
 
 int main();
+void menu();
+void procesarString();
+int getELemento();
+void quitaN(char *string, size_t n);
+void *accionThread(void *pointer);
+void generarThread();
+void mainAutomatico();
+int mainManual();
+void socketConnection();
+void error(const char *msg);
 
-main(){
+/* Zona de Listas*/
+typedef struct node {
+    int pid;
+    int burst;
+    int prioridad;
+    int tat;
+    int wt;
+    int estado; //1 ejecución, 0 terminado
+    struct node *next;
+} node_t;
+
+typedef struct list 
+{
+    node_t *head;
+
+}list_t;
+
+
+/* node_t * head = NULL;
+head = malloc(sizeof(node_t));*/
+
+//inserta al final de la lista
+void push(list_t *list, int pPId, int pBurst, int pPrioridad, int pTat,
+	int pWt, int pEstado) {
+    node_t *node = malloc(sizeof(node_t));
+    node->next = NULL;
+    node->pid = pPId;
+	node->burst = pBurst;
+	node->prioridad = pPrioridad;
+	node->tat = pTat;
+	node->wt = pWt;
+	node->estado = pEstado;
+    if(list->head == NULL){ //la lista está vacía;
+    	list->head = node;
+    }
+    else{
+    	node_t *current = list->head;
+	    while (current->next != NULL) {
+	        current = current->next;
+	    }
+	    /* now we can add a new variable */
+	    current->next = node;
+	}
+}
+
+void printList(list_t *list) {
+	//la lista no puede estar vacía, o se cae
+    node_t * current = list->head;
+    char sestado[15];
+    while (current != NULL) {
+    	if(current->estado == 0){
+    		strcpy(sestado, "Finalizado");
+    	}
+    	else{
+    		strcpy(sestado, "Ejecución");
+    	}
+        printf("Pid: %d | Burst: %d | prioridad: %d | TAT: %d | WT : %d | Estado: %s.\n", current->pid, current->burst,
+        	current->prioridad, current->tat, current->wt, sestado);
+        current = current->next;
+    }
+}
+
+/* FIN zona de listas */
+
+int main(){
 	srand(time(NULL));
 	menu();
 	if(strcmp(tipoCliente, "1") == 0){
@@ -43,14 +117,14 @@ main(){
 	};
 	return 0;
 } 
-menu(){
+void menu(){
 	printf("Selecciona el tipo de cliente:\n");
     printf("1. Manual\n");
     printf("2. Automático\n");
     scanf("%s", tipoCliente);
 }
 
-procesarString(){
+void procesarString(){
 	//cochino
 	//conseguimos id
 	int indice = getELemento();
@@ -87,7 +161,7 @@ int getELemento(){
 	return indice;
 }
 
-quitaN(char *string, size_t n){
+void quitaN(char *string, size_t n){
 	//qiita los primeros n digitos de un string
     size_t len = strlen(string);
     if (n > len)
@@ -116,7 +190,7 @@ void *accionThread(void *pointer){
 	return NULL; //finaliza thread
 }
 
-generarThread(){
+void generarThread(){
 	variablesThreads[contadorThreads][0] = infoProcesos[0];
 	variablesThreads[contadorThreads][1] = infoProcesos[1];
 	variablesThreads[contadorThreads][2] = infoProcesos[2];
@@ -125,7 +199,7 @@ generarThread(){
 	activeThreads++;
 }
 
-mainAutomatico(){
+void mainAutomatico(){
 	printf("Apreta la tecla e para salir.\n");
 
     char c = 0;
@@ -145,7 +219,7 @@ mainAutomatico(){
         generarThread();
     }
 }
-mainManual(){
+int mainManual(){
    FILE *fp;
    fp = fopen(pathArchivo, "r");
    if(fp == NULL) 
@@ -164,6 +238,13 @@ mainManual(){
 	while(activeThreads != 0){
 		int cacaConCarne;
 	}
+	printf("Prueba de listas:\n");
+	//node_t * head, pPId, pBurst, pPrioridad, pTat,pWt, pEstado
+	list_t *list;
+	list->head = NULL;
+	push(list, 1, 2, 4, 0, 0, 1);
+	push(list, 2, 3, 7, 99, 98, 0);
+	printList(list);
 }
 
 void socketConnection(){

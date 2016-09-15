@@ -1,4 +1,5 @@
-Se necesita para instalar en UBUNTU esta librería: sudo apt-get install libncurses5-dev libncursesw5-dev
+Se necesita para instalar en UBUNTU esta librería: 
+- sudo apt-get install libncurses5-dev libncursesw5-dev
 
 Para compilar se debe estar en cualquiera de las dos carpetas (cliente o server) y se utiliza: make
 
