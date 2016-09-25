@@ -464,6 +464,7 @@ node_t *rr(){
     if(lista->head != NULL){
         node_t * current = lista->head;
         node_t * menorNodo = malloc(sizeof(node_t));
+        node_t * primerNodo = malloc(sizeof(node_t));
         int copia = indexActual;
         while(copia != 0){
             copia--;
@@ -471,6 +472,8 @@ node_t *rr(){
         }
         copia = indexActual;
         int primerId = current->pid;
+        int primerEstado = current->estado;
+        primerNodo = current;
         bool encontrado =  false;
         while(encontrado != true){
             if(primerId != current->pid){
@@ -483,7 +486,12 @@ node_t *rr(){
             }
             if(current->pid == (primerId - 1)){
                 indexActual = indexActual; //no cambia nada
-                return NULL; //no encontro nada
+                if (primerEstado == 1){//el primero sigue en ready
+                    return primerNodo;
+                }
+                else{
+                    return NULL; //no encontro nada
+                }
             }
 
             if(current->next == NULL && final == 0){//llega a final de la lista

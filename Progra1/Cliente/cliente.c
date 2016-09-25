@@ -234,13 +234,6 @@ int mainManual(){
 	while(activeThreads != 0){
 		int cacaConCarne;
 	}
-	printf("Prueba de listas:\n");
-	//node_t * head, pPId, pBurst, pPrioridad, pTat,pWt, pEstado
-	list_t *list;
-	list->head = NULL;
-	push(list, 1, 2, 4, 0, 0, 1);
-	push(list, 2, 3, 7, 99, 98, 0);
-	printList(list);
 }
 
 void socketConnection(int pID, int burst, int prioridad){
