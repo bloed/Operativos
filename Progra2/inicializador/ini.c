@@ -7,11 +7,10 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define SHMSZ 277
-
 //Variables Globales
 char numeroLineas[3];
-int bytesLinea = 12;//cada línea será de 12 bytes.
+int cantidadBytes;
+int bytesLinea = 66;//cada línea será de 66 bytes.
 
 
 int main();
@@ -20,7 +19,8 @@ int pedirMemoria();
 int main(){
 	printf("Ingresa la cantidad de líneas que tendrá la memoria compartida:\n");
 	scanf("%s", numeroLineas);
-	pedirMemoria(atoi(numeroLineas) * bytesLinea);
+    cantidadBytes = atoi(numeroLineas) * bytesLinea;
+	pedirMemoria(cantidadBytes + 1);//el último se usará para el final del achivo
 }
 
 int pedirMemoria(int bytes){
@@ -50,27 +50,11 @@ int pedirMemoria(int bytes){
      */
     s = shm;
 
-    for (char c = 'a'; c <= 'z'; c++){
-        *s++ = c;
+    for (int c = 0; c < atoi(numeroLineas); c++){
+        strcpy( s, "+ Linea vacía \n");
+        s += 66;
     }
-    *s = NULL;//me parece que no es necesario
-
-    /*
-     * Finally, we wait until the other process 
-     * changes the first character of our memory
-     * to '*', indicating that it has read what 
-     * we put there.
-     */
-    while (*shm != '*'){
-        sleep(1);
-    }
-
-    int rtrn;
-    //Para destruirila
-    if ((rtrn = shmctl(shmid, IPC_RMID, NULL)) == -1) {
-	    perror("shmctl: shmctl failed");
-	    exit(1);
-    }
+    *s = '*';//marcar el final del archivo
 
     exit(0);
 }

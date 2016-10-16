@@ -1,7 +1,6 @@
 #Edit to change compiled program name
-TARGET = writer
+TARGET = fin
 
-LIBS = -pthread
 CC = gcc
 CFLAGS = -std=gnu99
 
