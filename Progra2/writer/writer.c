@@ -20,6 +20,7 @@ int tiempoLeyendo;
 char scantidadEscritores[2];
 char stiempoDormido[2];
 char stiempoLeyendo[2];
+char mensajeBitacora[122];//usado para el mensaje para escribir en bitácora
 
 int shmid;
 key_t key = 666; //Helo
@@ -40,6 +41,7 @@ void crearThreads();
 void *accionThread(void *pointer);
 void imprimirArchivo();
 void escribirLinea(int linea, int idProceso);
+void escribirArchivo();
 
 
 void menu(){
@@ -127,11 +129,15 @@ void escribirLinea(int linea, int idProceso){
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    sprintf(fecha,"%d_%d_%d %d:%d:%d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    sprintf(fecha,"%d_%d_%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
     sprintf(mensaje,"- Proceso: %d escribe en linea %d, ",idProceso,linea);
     strcat(mensaje,fecha);
-    
+    //ahora escribimos en bitacora
+    sprintf(mensajeBitacora, "El proceso %d [writer] escribio lo siguiente: {%s}.", idProceso,mensaje);
+    escribirArchivo();
+    strcat(mensaje, "\n");
     strcpy(s, mensaje);
+
 }
 
 void imprimirArchivo(){
@@ -139,6 +145,17 @@ void imprimirArchivo(){
     for (s = shm; *s != '*'; s++){
         putchar(*s);
     }
+}
+
+void escribirArchivo(){
+    FILE *f = fopen("../Bitacora.txt", "a");
+    if (f == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+    fprintf(f, "%s\n", mensajeBitacora);
+    fclose(f);
 }
 
 int main(){
