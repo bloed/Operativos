@@ -43,6 +43,6 @@ int devolverMemoria(){
         perror("shmctl: shmctl failed");
         exit(1);
     }
-
+    printf("Memoria limpiada \n");
     exit(0);
 }

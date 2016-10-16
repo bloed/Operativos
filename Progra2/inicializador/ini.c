@@ -51,7 +51,7 @@ int pedirMemoria(int bytes){
     s = shm;
 
     for (int c = 0; c < atoi(numeroLineas); c++){
-        strcpy( s, "+ Linea vacía \n");
+        strcpy( s, "- Linea llena \n");
         s += 66;
     }
     *s = '*';//marcar el final del archivo
