@@ -20,7 +20,7 @@ int main(){
 	printf("Ingresa la cantidad de líneas que tendrá la memoria compartida:\n");
 	scanf("%s", numeroLineas);
     cantidadBytes = atoi(numeroLineas) * bytesLinea;
-	pedirMemoria(cantidadBytes + 1);//el último se usará para el final del achivo. Añadi una linea extra por si acaso
+	pedirMemoria(cantidadBytes + 1);//el último se usará para el final del achivo
 }
 
 int pedirMemoria(int bytes){
@@ -51,7 +51,7 @@ int pedirMemoria(int bytes){
     s = shm;
 
     for (int c = 0; c < atoi(numeroLineas); c++){
-        strcpy( s, "- Linea llena \n");
+        strcpy( s, "+ Linea vacía \n");
         s += 66;
     }
     *s = '*';//marcar el final del archivo

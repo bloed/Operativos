@@ -115,7 +115,7 @@ int siguienteLinea(int lineaActual){
 void escribirLinea(int linea, int idProceso){
     //escribe una linea, en la posicion lineaActual
     char *s = shm;
-    int offset = 67*linea;//por alguna razón no van en bloques de 66, sino de 67 
+    int offset = 66*linea;//por alguna razón no van en bloques de 66, sino de 67 
     s += offset;
     char mensaje[66];
     char fecha[19];
