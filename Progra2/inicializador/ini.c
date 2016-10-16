@@ -20,7 +20,7 @@ int main(){
 	printf("Ingresa la cantidad de líneas que tendrá la memoria compartida:\n");
 	scanf("%s", numeroLineas);
     cantidadBytes = atoi(numeroLineas) * bytesLinea;
-	pedirMemoria(cantidadBytes + 1);//el último se usará para el final del achivo
+	pedirMemoria(cantidadBytes + 1);//el último se usará para el final del achivo. Añadi una linea extra por si acaso
 }
 
 int pedirMemoria(int bytes){
