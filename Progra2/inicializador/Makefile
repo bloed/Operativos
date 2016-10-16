@@ -1,6 +1,7 @@
 #Edit to change compiled program name
 TARGET = ini
 
+LIBS = -pthread
 CC = gcc
 CFLAGS = -std=gnu99
 

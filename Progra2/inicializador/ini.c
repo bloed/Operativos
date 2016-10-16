@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <semaphore.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 //Variables Globales
+char SEM_GEN[] = "gen";
 char numeroLineas[3];
 int cantidadBytes;
 int bytesLinea = 66;//cada línea será de 66 bytes.
@@ -30,6 +33,15 @@ int pedirMemoria(int bytes){
 	size_t size = bytes; /* size to be passed to shmget() */ 
 	char *shm; //apunta al inicio de memoria compartida
 	char *s;
+    sem_t *semaphore;
+
+    //crate & initialize existing semaphore
+    semaphore = sem_open(SEM_GEN,O_CREAT,0644,1);
+    if(semaphore == SEM_FAILED){
+        perror("unable to create semaphore");
+        sem_unlink(SEM_GEN);
+        exit(-1);
+    }
 
 	if ((shmid = shmget(key, size, IPC_CREAT | 0666)) < 0) {
         perror("shmget");

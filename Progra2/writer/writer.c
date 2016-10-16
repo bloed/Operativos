@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
-
+#include <semaphore.h>
 #include <unistd.h>
 #include <pthread.h>
 
@@ -24,6 +24,9 @@ char stiempoLeyendo[2];
 int shmid;
 key_t key = 666; //Helo
 char *shm; //apunta al inicio de memoria compartida
+
+sem_t *semaphore;
+char SEM_GEN[] = "gen";
 
 pthread_t threads[100];
 int contadorThreads = 0;
@@ -66,14 +69,16 @@ void *accionThread(void *pointer){
     int pID = variablesThreads[idThread][0];
     int lineaActual = variablesThreads[idThread][1];
     while(true){
+        sem_wait(semaphore);
         if (!archivoLleno()){
             lineaActual = siguienteLinea(lineaActual);
-            printf("--------------------------------------------\n");
+            printf("--------------------------------------------%d\n",pID);
             sleep(tiempoLeyendo);
             escribirLinea(lineaActual, pID);
         }
-        sleep(tiempoDormido);
         imprimirArchivo();
+        sem_post(semaphore);
+        sleep(tiempoDormido);
     }
 
     printf("Finaliza Thread %d\n", idThread);
@@ -83,7 +88,7 @@ void *accionThread(void *pointer){
 void crearThreads(){
     for(int i = 0; i < cantidadThreads ; i++){
         variablesThreads[contadorThreads][0] = contadorThreads;
-        variablesThreads[contadorThreads][1] = 2;//todos inician en la línea 0
+        variablesThreads[contadorThreads][1] = 0;//todos inician en la línea 0
         pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) contadorThreads);
         contadorThreads++;
     }
@@ -139,7 +144,12 @@ void imprimirArchivo(){
 int main(){
     menu();
 
-
+    semaphore = sem_open(SEM_GEN,0,0644,0);
+    if(semaphore == SEM_FAILED){
+        perror("unable to create semaphore");
+        sem_unlink(SEM_GEN);
+        exit(-1);
+    }
     /*
      * Locate the segment. Si existe falla.
      */

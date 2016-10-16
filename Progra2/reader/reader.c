@@ -35,6 +35,7 @@ int siguienteLinea(int lineaActual);// devuelve la siguiente linea vacía
 void crearThreads();
 void *accionThread(void *pointer);
 void imprimirArchivo();
+void leerArchivo(int lineaActual);
 
 
 void menu(){
@@ -71,7 +72,7 @@ void *accionThread(void *pointer){
             lineaActual = siguienteLinea(lineaActual);
             lineaActual++;
             variablesThreads[idThread][1] = lineaActual; //para guardar la info
-            printf("La siguiente linea es: %d\n", lineaActual);
+            leerArchivo(lineaActual);
             sleep(tiempoLeyendo + tiempoDormido);
         }
     }
@@ -121,6 +122,15 @@ void imprimirArchivo(){
     for (s = shm; *s != '*'; s++){
         putchar(*s);
     }
+}
+
+void leerArchivo(int lineaActual){
+    char *s = shm;
+    int offset = 66*lineaActual;
+    for(s = shm; *s!='\n';s++){
+        putchar(*s);
+    }
+    putchar('\n');
 }
 
 int main(){
