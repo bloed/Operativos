@@ -88,7 +88,7 @@ int pedirMemoria(int bytes){
 
     int *p = (int *)shm;
     *p = 0; // inicializamos pid general
-    p++;
+    p++;//al ser de tipo puntero int, en realidad vamos de 4 bytes en 4 bytes
     *p = 0; // inicializamos cantidad lecturas egoistas
     p++;
     *p = 1; // inicializamos bandera

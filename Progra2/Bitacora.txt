@@ -1,0 +1,10 @@
+El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 0, 2016_10_20 11:2:24}.
+El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 1, 2016_10_20 11:2:26}.
+El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 2, 2016_10_20 11:2:28}.
+El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 3, 2016_10_20 11:2:30}.
+El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 4, 2016_10_20 11:2:32}.
+El proceso 1 [reader egoísta] leyo lo siguiente: {- Proceso: 0 escribe en linea 3, 2016_10_20 11:2:30     } en fecha: 2016_10_20 11:10:4.
+El proceso 1 [reader egoísta] leyo lo siguiente: {- Proceso: 0 escribe en linea 2, 2016_10_20 11:2:28     } en fecha: 2016_10_20 11:10:8.
+El proceso 1 [reader egoísta] leyo lo siguiente: {- Proceso: 0 escribe en linea 1, 2016_10_20 11:2:26     } en fecha: 2016_10_20 11:10:12.
+El proceso 1 [reader egoísta] leyo lo siguiente: {- Proceso: 0 escribe en linea 0, 2016_10_20 11:2:24     } en fecha: 2016_10_20 11:10:24.
+El proceso 4 [reader egoísta] leyo lo siguiente: {- Proceso: 0 escribe en linea 4, 2016_10_20 11:2:32     } en fecha: 2016_10_20 11:15:43.

@@ -20,7 +20,7 @@ int tiempoLeyendo;
 char scantidadEscritores[2];
 char stiempoDormido[2];
 char stiempoLeyendo[2];
-char mensajeBitacora[122];//usado para el mensaje para escribir en bitácora
+char mensajeBitacora[152];//usado para el mensaje para escribir en bitácora
 
 int shmid;
 key_t key = 666; //Helo
@@ -36,17 +36,22 @@ int variablesThreads[100][3];//se guarda pid  | y linea actual y estado
 // 1 : dormido
 // 2 : bloqueado
 int cantidadThreadsRestantes = 0;
+int lecturasSeguidas = 0;
+
+char bufferLinea[66];
+
 
 
 int main();
 void menu();
-int archivoLleno();//devuelve si el archivo esta lleno actualmente
-int siguienteLinea(int lineaActual);// devuelve la siguiente linea vacía
+int algoQueLeer();//hay algo que leer
+int hayAlgo();//luego de tener la linea, hay algo?
+void leerArchivo(int lineaActual);//lee una linea
 int getBandera();
 int getContador();
 void setContador();
+void setLecturaSeguida();//aumenta en uno cada vez que un reader egoista lee
 void crearThreads();
-void setLecturaSeguida();//la pone en cero
 void *accionThread(void *pointer);
 void imprimirArchivo();
 void escribirLinea(int linea, int idProceso);
@@ -54,7 +59,7 @@ void escribirArchivo();
 
 
 void menu(){
-    printf("Ingresa la cantidad de escritores:\n");
+    printf("Ingresa la cantidad de lectores egoístas:\n");
     scanf("%s", scantidadEscritores);
     printf("Ingresa el tiempo duraran escribiendo:\n");
     scanf("%s", stiempoLeyendo);
@@ -85,36 +90,64 @@ void setContador(){
 void setLecturaSeguida(){
     int *p = (int *)shm;
     p++;//nos movemos hacia arriba
-    *p = 0;
+    *p = *p + 1;
 }
 
-int archivoLleno(){
+int algoQueLeer(){
     char *s;
     for (s = shm + 3612; *s != '*'; s++){
-        if (*s == '+'){// si se encuentra un más, es que al menos hay una línea vacía
-            return false;
+        if (*s == '-'){// si se encuentra un -; hay algo que leer
+            return true;
         }
     }
     return true;
 }
 
+int hayAlgo(int linea){
+    char *s = shm + 3612;
+    int offset = 66*linea;
+    s += offset;
+    if(*s == '+'){
+        return false;
+    }
+    else{
+        return true;
+    }
+}
+
+int totalLineas(){
+    //devuelve el total de íneas del archivo
+    int contador = 0;
+    char *s;
+    for (s = shm + 3612; *s != '*'; s++){
+        if ((*s == '-') || (*s == '+')){// si se encuentra un -; hay algo que leer
+            contador++;
+        }
+    }
+    return contador;
+}
+
 void *accionThread(void *pointer){
-    int idThread = (intptr_t) pointer;
-    int pID = variablesThreads[idThread][0];
-    int lineaActual = variablesThreads[idThread][1];
+    int idThread = (intptr_t) pointer; //id local en el array de 100
+    int pID = variablesThreads[idThread][0]; //id verdadero
+    int lineaActual = 0;
+    int lineas = totalLineas();
+    //lineas--;
     while(getBandera() == 1){
         variablesThreads[idThread][2] = 2; //ponemos estado bloqueado
-        sem_wait(semaphore);
-        variablesThreads[idThread][2] = 0; //ponemos estado escribiendo
-        if (!archivoLleno()){
-            lineaActual = siguienteLinea(lineaActual);
-            printf("--------------------------------------------%d\n",pID);
-            sleep(tiempoLeyendo);
-            escribirLinea(lineaActual, pID);
-            setLecturaSeguida();
+        //sem_wait(semaphore);
+        variablesThreads[idThread][2] = 0; //ponemos estado leyendo
+        if (algoQueLeer()){
+            lineaActual = rand() % lineas; //random de 0 a total de lineas
+            printf("--------------------------------------------%d\n",lineaActual);
+            if(hayAlgo(lineaActual)){
+                sleep(tiempoLeyendo);
+                escribirLinea(lineaActual, pID);
+                setLecturaSeguida();
+            }
         }
         imprimirArchivo();
-        sem_post(semaphore);
+        //sem_post(semaphore);
         variablesThreads[idThread][2] = 1; //ponemos estado dormido
         sleep(tiempoDormido);
     }
@@ -133,48 +166,34 @@ void crearThreads(){
     }
 }
 
-int siguienteLinea(int lineaActual){
-    //devuelve la siguiente linea donde se puede escribir respecto a la lineaActual
-    char *s = shm + 3612;
-    int lineaReal = lineaActual;
-    int offset = 66*lineaActual;//por alguna razón no van en bloques de 66, sino de 67 
-    s += offset;
-    //printf("Linea real(antes de): %d. Offset :%d\n", lineaReal,offset);
-    while (true){
-        if(*s == '+'){
-            //printf("Linea real(después de): %d\n", lineaReal);
-            return lineaReal;
-        }
-        if(*s == '-'){
-            lineaReal++;
-        }
-        if(*s == '*'){
-            s = shm;
-            lineaReal = 0;
-        }
-        s = s + 1;
-    }
-}
 
 void escribirLinea(int linea, int idProceso){
     //escribe una linea, en la posicion lineaActual
     char *s = shm + 3612;
-    int offset = 66*linea;//por alguna razón no van en bloques de 66, sino de 67 
+    int offset = 66*linea;
     s += offset;
-    char mensaje[66];
     char fecha[19];
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     sprintf(fecha,"%d_%d_%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    sprintf(mensaje,"- Proceso: %d escribe en linea %d, ",idProceso,linea);
-    strcat(mensaje,fecha);
+    
+    leerArchivo(linea);
     //ahora escribimos en bitacora
-    sprintf(mensajeBitacora, "El proceso %d [writer] escribio lo siguiente: {%s}.", idProceso,mensaje);
+    sprintf(mensajeBitacora, "El proceso %d [reader egoísta] leyo lo siguiente: {%s} en fecha: %s.", idProceso,bufferLinea, fecha);
     escribirArchivo();
-    strcat(mensaje, "     \n");
-    strcpy(s, mensaje);
+    strcpy(s, "+ Línea vacía                                             \n");
 
+}
+
+void leerArchivo(int lineaActual){
+    char *s = shm + 3612;
+    int offset = 66*lineaActual;
+    int contador = 0;
+    for(s += offset; *s!='\n';s++){
+        bufferLinea[contador] = *s;
+        contador++;
+    }
 }
 
 void imprimirArchivo(){
@@ -225,6 +244,6 @@ int main(){
     while(cantidadThreadsRestantes != 0){
         int caca;
     }
-    printf("Finaliza ejecución de los writers\n");
+    printf("Finaliza ejecución de los readers egoístas\n");
 }
 

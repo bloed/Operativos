@@ -38,6 +38,7 @@ int archivoLleno();//devuelve si el archivo esta lleno actualmente
 int getBandera();
 int getContador();
 void setContador();
+void setLecturaSeguida();
 int siguienteLinea(int lineaActual);// devuelve la siguiente linea vacía
 void crearThreads();
 void *accionThread(void *pointer);
@@ -77,6 +78,13 @@ int getContador(){
     int *p = (int *)shm;
     return *p;
 }
+
+void setLecturaSeguida(){
+    int *p = (int *)shm;
+    p++;//nos movemos hacia arriba
+    *p = 0;
+}
+
 void setContador(){
     //aumenta en 1 el contador
     int *p = (int *)shm;
@@ -85,8 +93,8 @@ void setContador(){
 
 void *accionThread(void *pointer){
     //HACE FALTA PONER ESTADO BLOQUEADO/LEYENDO/ETC.
-    int idThread = (intptr_t) pointer;
-    int pID = variablesThreads[idThread][0];
+    int idThread = (intptr_t) pointer;//id local para el array de 100
+    int pID = variablesThreads[idThread][0];// id verdadero del programa
     int lineaActual = variablesThreads[idThread][1];
     while(getBandera() == 1){
         if(archivoVacio()){
@@ -97,6 +105,7 @@ void *accionThread(void *pointer){
             leerArchivo(lineaActual);
             lineaActual++;
             variablesThreads[idThread][1] = lineaActual; //para guardar la info
+            setLecturaSeguida();
             sleep(tiempoLeyendo + tiempoDormido);
         }
     }
@@ -110,7 +119,7 @@ void crearThreads(){
     for(int i = 0; i < cantidadThreads ; i++){
         variablesThreads[contadorThreads][0] = getContador();;
         variablesThreads[contadorThreads][1] = 0;//todos inician en la línea 0
-        pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) getContador());
+        pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) contadorThreads);
         setContador();//aumentamos en uno
         contadorThreads++;
         cantidadThreadsRestantes++;
