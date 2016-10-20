@@ -1,4 +1,0 @@
-El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 0, 2016_10_16 20:25:47}.
-El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 1, 2016_10_16 20:25:49}.
-El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 2, 2016_10_16 20:25:51}.
-El proceso 0 [writer] escribio lo siguiente: {- Proceso: 0 escribe en linea 3, 2016_10_16 20:25:53}.

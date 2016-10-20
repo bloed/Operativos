@@ -45,12 +45,24 @@ int devolverMemoria(){
         exit(1);
     }
 
+
+    //ahora procedemos a cerrar los programos, ponemos la bandera en 0
+    int *p = (int *)shm;
+    p = p + 2;
+    *p = 0; // inicializamos bandera
+    printf("Cerramos todos los threads... 5 segs más...\n");
+    sleep(5);
+
+
+
     int rtrn;
     //Para destruirila
     if ((rtrn = shmctl(shmid, IPC_RMID, NULL)) == -1) {
         perror("shmctl: shmctl failed");
         exit(1);
     }
+
+
     sem_close(semaphore);
     sem_unlink(SEM_GEN);
     printf("Memoria limpiada \n");

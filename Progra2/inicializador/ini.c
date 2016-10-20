@@ -15,6 +15,20 @@ char numeroLineas[3];
 int cantidadBytes;
 int bytesLinea = 66;//cada línea será de 66 bytes.
 
+int caca[4];
+
+/* Los enteros pesan 4 bytes
+  0       :  pId General
+  4       :  canEgoistas
+  8       :  bandera
+  12      :  array de info de writers
+  1212    :  array de info de readers
+  2412    :  array de info de reader egoístas
+  3612    :  inicio del archivo
+  X       :  * - fin del archivo
+  
+*/
+
 
 int main();
 int pedirMemoria();
@@ -23,7 +37,7 @@ int main(){
 	printf("Ingresa la cantidad de líneas que tendrá la memoria compartida:\n");
 	scanf("%s", numeroLineas);
     cantidadBytes = atoi(numeroLineas) * bytesLinea;
-	pedirMemoria(cantidadBytes + 1);//el último se usará para el final del achivo
+	pedirMemoria(cantidadBytes + 1 + 3612);//el último se usará para el final del achivo
 }
 
 int pedirMemoria(int bytes){
@@ -60,13 +74,26 @@ int pedirMemoria(int bytes){
      * Now put some things into the memory for the
      * other process to read.
      */
+    
+
     s = shm;
+    s = s + 3612; //nos saltamos todo el header
 
     for (int c = 0; c < atoi(numeroLineas); c++){
-        strcpy( s, "+ Linea vacía \n");
+        strcpy( s, "+ Línea vacía \n");
         s += 66;
     }
     *s = '*';//marcar el final del archivo
+    printf("Memoria compartida creada e inicializada.\n");
+
+    int *p = (int *)shm;
+    *p = 0; // inicializamos pid general
+    p++;
+    *p = 0; // inicializamos cantidad lecturas egoistas
+    p++;
+    *p = 1; // inicializamos bandera
+
+
 
     exit(0);
 }

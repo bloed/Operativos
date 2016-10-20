@@ -31,12 +31,20 @@ char SEM_GEN[] = "gen";
 
 pthread_t threads[100];
 int contadorThreads = 0;
-int variablesThreads[100][2];//se guarda pid  | y linea actual
-// considerar meter estado (dormido, leyendo) y usar pid REAL.
+int variablesThreads[100][3];//se guarda pid  | y linea actual y estado 
+// 0 : acceso
+// 1 : dormido
+// 2 : bloqueado
+int cantidadThreadsRestantes = 0;
+
+
 int main();
 void menu();
 int archivoLleno();//devuelve si el archivo esta lleno actualmente
 int siguienteLinea(int lineaActual);// devuelve la siguiente linea vacía
+int getBandera();
+int getContador();
+void setContador();
 void crearThreads();
 void *accionThread(void *pointer);
 void imprimirArchivo();
@@ -56,9 +64,26 @@ void menu(){
     tiempoLeyendo = atoi(stiempoLeyendo);
 }
 
+int getBandera(){
+    int *p = (int *)shm;
+    p = p + 2;
+    return *p;
+}
+
+int getContador(){
+    int *p = (int *)shm;
+    return *p;
+}
+
+void setContador(){
+    //aumenta en 1 el contador
+    int *p = (int *)shm;
+    *p = *p + 1;
+}
+
 int archivoLleno(){
     char *s;
-    for (s = shm; *s != '*'; s++){
+    for (s = shm + 3612; *s != '*'; s++){
         if (*s == '+'){// si se encuentra un más, es que al menos hay una línea vacía
             return false;
         }
@@ -70,8 +95,10 @@ void *accionThread(void *pointer){
     int idThread = (intptr_t) pointer;
     int pID = variablesThreads[idThread][0];
     int lineaActual = variablesThreads[idThread][1];
-    while(true){
+    while(getBandera() == 1){
+        variablesThreads[idThread][2] = 2; //ponemos estado bloqueado
         sem_wait(semaphore);
+        variablesThreads[idThread][2] = 0; //ponemos estado escribiendo
         if (!archivoLleno()){
             lineaActual = siguienteLinea(lineaActual);
             printf("--------------------------------------------%d\n",pID);
@@ -80,25 +107,27 @@ void *accionThread(void *pointer){
         }
         imprimirArchivo();
         sem_post(semaphore);
+        variablesThreads[idThread][2] = 1; //ponemos estado dormido
         sleep(tiempoDormido);
     }
-
-    printf("Finaliza Thread %d\n", idThread);
+    cantidadThreadsRestantes--;
     return NULL; //finaliza thread
 }
 
 void crearThreads(){
     for(int i = 0; i < cantidadThreads ; i++){
-        variablesThreads[contadorThreads][0] = contadorThreads;
+        variablesThreads[contadorThreads][0] = getContador();
         variablesThreads[contadorThreads][1] = 0;//todos inician en la línea 0
-        pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) contadorThreads);
+        pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) getContador());
+        setContador();//aumentamos en uno
         contadorThreads++;
+        cantidadThreadsRestantes++;
     }
 }
 
 int siguienteLinea(int lineaActual){
     //devuelve la siguiente linea donde se puede escribir respecto a la lineaActual
-    char *s = shm;
+    char *s = shm + 3612;
     int lineaReal = lineaActual;
     int offset = 66*lineaActual;//por alguna razón no van en bloques de 66, sino de 67 
     s += offset;
@@ -121,7 +150,7 @@ int siguienteLinea(int lineaActual){
 
 void escribirLinea(int linea, int idProceso){
     //escribe una linea, en la posicion lineaActual
-    char *s = shm;
+    char *s = shm + 3612;
     int offset = 66*linea;//por alguna razón no van en bloques de 66, sino de 67 
     s += offset;
     char mensaje[66];
@@ -135,14 +164,14 @@ void escribirLinea(int linea, int idProceso){
     //ahora escribimos en bitacora
     sprintf(mensajeBitacora, "El proceso %d [writer] escribio lo siguiente: {%s}.", idProceso,mensaje);
     escribirArchivo();
-    strcat(mensaje, "\n");
+    strcat(mensaje, "     \n");
     strcpy(s, mensaje);
 
 }
 
 void imprimirArchivo(){
     char *s;
-    for (s = shm; *s != '*'; s++){
+    for (s = shm + 3612; *s != '*'; s++){
         putchar(*s);
     }
 }
@@ -185,8 +214,9 @@ int main(){
     }
     crearThreads();
 
-    while(true){
-        // ¿Debe ser finalizado externamente?
+    while(cantidadThreadsRestantes != 0){
+        int caca;
     }
+    printf("Finaliza ejecución de los writers\n");
 }
 

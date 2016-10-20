@@ -26,11 +26,18 @@ char *shm; //apunta al inicio de memoria compartida
 
 pthread_t threads[100];
 int contadorThreads = 0;
-int variablesThreads[100][2];//se guarda pid  | y linea actual
+int variablesThreads[100][3];//se guarda pid  | y linea actual y estado 
+// 0 : acceso
+// 1 : dormido
+// 2 : bloqueado
+int cantidadThreadsRestantes = 0;
 
 int main();
 void menu();
 int archivoLleno();//devuelve si el archivo esta lleno actualmente
+int getBandera();
+int getContador();
+void setContador();
 int siguienteLinea(int lineaActual);// devuelve la siguiente linea vacía
 void crearThreads();
 void *accionThread(void *pointer);
@@ -52,7 +59,7 @@ void menu(){
 
 int archivoVacio(){
     char *s;
-    for (s = shm; *s != '*'; s++){
+    for (s = shm + 3612; *s != '*'; s++){
         if (*s == '-'){// si se encuentra un más, es que al menos hay una línea vacía
             return false;
         }
@@ -60,48 +67,66 @@ int archivoVacio(){
     return true;
 }
 
+int getBandera(){
+    int *p = (int *)shm;
+    p = p + 2;
+    return *p;
+}
+
+int getContador(){
+    int *p = (int *)shm;
+    return *p;
+}
+void setContador(){
+    //aumenta en 1 el contador
+    int *p = (int *)shm;
+    *p = *p + 1;
+}
+
 void *accionThread(void *pointer){
+    //HACE FALTA PONER ESTADO BLOQUEADO/LEYENDO/ETC.
     int idThread = (intptr_t) pointer;
     int pID = variablesThreads[idThread][0];
     int lineaActual = variablesThreads[idThread][1];
-    while(true){
+    while(getBandera() == 1){
         if(archivoVacio()){
-            printf("Lleno \n");
-            sleep(tiempoDormido); //si esta lleno se duerme?
+            printf("Vacío \n");
+            sleep(tiempoDormido); //si esta lleno se duerme? Y si debería
         }else{
             lineaActual = siguienteLinea(lineaActual);
+            leerArchivo(lineaActual);
             lineaActual++;
             variablesThreads[idThread][1] = lineaActual; //para guardar la info
-            leerArchivo(lineaActual);
             sleep(tiempoLeyendo + tiempoDormido);
         }
     }
 
-
-
     printf("Finaliza Thread %d\n", idThread);
+    cantidadThreadsRestantes--;
     return NULL; //finaliza thread
 }
 
 void crearThreads(){
     for(int i = 0; i < cantidadThreads ; i++){
-        variablesThreads[contadorThreads][0] = contadorThreads;
+        variablesThreads[contadorThreads][0] = getContador();;
         variablesThreads[contadorThreads][1] = 0;//todos inician en la línea 0
-        pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) contadorThreads);
+        pthread_create(&threads[contadorThreads], NULL, &accionThread, (void *) (intptr_t) getContador());
+        setContador();//aumentamos en uno
         contadorThreads++;
+        cantidadThreadsRestantes++;
     }
 }
 
 int siguienteLinea(int lineaActual){
     //devuelve la siguiente linea donde se puede escribir respecto a la lineaActual
     //falta el caso en que si llega al final, que comience otra vez
-    char *s = shm;
+    char *s = shm + 3612;
     int lineaReal = lineaActual;
-    int offset = 66*lineaActual;//por alguna razón no van en bloques de 66, sino de 67 
+    int offset = 66*lineaActual;
     s += offset;
-    printf("Char %c \n",s[0]);
+    //printf("Char %c \n",s[0]);
     while (true){
-        if(*s == '-'){
+        if(*s == '-'){ //este método devuelve línea 0, pero abajo se va hacia uno.
             return lineaReal;
         }
         if(*s == '+'){
@@ -109,7 +134,7 @@ int siguienteLinea(int lineaActual){
             lineaReal++;
         }
         if(*s == '*'){
-            s = shm;
+            s = shm + 3612;
             lineaReal = 0;
         }
         printf("Vuelve al inicio \n");
@@ -119,15 +144,15 @@ int siguienteLinea(int lineaActual){
 
 void imprimirArchivo(){
     char *s;
-    for (s = shm; *s != '*'; s++){
+    for (s = shm + 3612; *s != '*'; s++){
         putchar(*s);
     }
 }
 
 void leerArchivo(int lineaActual){
-    char *s = shm;
+    char *s = shm + 3612;
     int offset = 66*lineaActual;
-    for(s = shm; *s!='\n';s++){
+    for(s += offset; *s!='\n';s++){
         putchar(*s);
     }
     putchar('\n');
@@ -154,8 +179,9 @@ int main(){
         exit(1);
     }
     crearThreads();
-    while(true){
-        // ¿Debe ser finalizado externamente?
+    while(cantidadThreadsRestantes != 0){
+        int caca;
     }
+    printf("Finaliza ejecución de los readers\n");
 }
 
