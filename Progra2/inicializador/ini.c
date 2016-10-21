@@ -21,9 +21,9 @@ int caca[4];
   0       :  pId General
   4       :  canEgoistas
   8       :  bandera
-  12      :  array de info de writers
-  1212    :  array de info de readers
-  2412    :  array de info de reader egoístas
+  12      :  array de info de writers (el primer bytes es la cantidad, para saber cuanto leer)
+  1212    :  array de info de readers (el primer bytes es la cantidad, para saber cuanto leer)
+  2412    :  array de info de reader egoístas (el primer bytes es la cantidad, para saber cuanto leer)
   3612    :  inicio del archivo
   X       :  * - fin del archivo
   

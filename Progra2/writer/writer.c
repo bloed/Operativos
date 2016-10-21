@@ -44,6 +44,7 @@ int archivoLleno();//devuelve si el archivo esta lleno actualmente
 int siguienteLinea(int lineaActual);// devuelve la siguiente linea vacía
 int getBandera();
 int getContador();
+void paraEspia();//pone en memoria compartida el estado de los writers
 void setContador();
 void crearThreads();
 void setLecturaSeguida();//la pone en cero
@@ -98,14 +99,30 @@ int archivoLleno(){
     return true;
 }
 
+void paraEspia(){
+    int *p = (int *)shm;
+    p = p + 3;
+    *p = cantidadThreads;
+    p++;
+    for(int i = 0; i < cantidadThreads ; i++){
+        *p = variablesThreads[i][0]; //id
+        p++;
+        *p = variablesThreads[i][2]; //estado
+        p++;
+    }
+}
+
 void *accionThread(void *pointer){
     int idThread = (intptr_t) pointer;
     int pID = variablesThreads[idThread][0];
     int lineaActual = variablesThreads[idThread][1];
+    paraEspia(); //NO SE si esto hay que sincronizarlo
     while(getBandera() == 1){
         variablesThreads[idThread][2] = 2; //ponemos estado bloqueado
+        paraEspia(); //NO SE si esto hay que sincronizarlo
         sem_wait(semaphore);
         variablesThreads[idThread][2] = 0; //ponemos estado escribiendo
+        paraEspia(); //NO SE si esto hay que sincronizarlo
         if (!archivoLleno()){
             lineaActual = siguienteLinea(lineaActual);
             printf("--------------------------------------------%d\n",pID);
@@ -116,6 +133,7 @@ void *accionThread(void *pointer){
         imprimirArchivo();
         sem_post(semaphore);
         variablesThreads[idThread][2] = 1; //ponemos estado dormido
+        paraEspia(); //NO SE si esto hay que sincronizarlo
         sleep(tiempoDormido);
     }
     cantidadThreadsRestantes--;

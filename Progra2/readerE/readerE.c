@@ -51,6 +51,7 @@ int getBandera();
 int getContador();
 void setContador();
 void setLecturaSeguida();//aumenta en uno cada vez que un reader egoista lee
+void paraEspia();//pone en memoria compartida el estado de los readers egoistas
 void crearThreads();
 void *accionThread(void *pointer);
 void imprimirArchivo();
@@ -127,16 +128,32 @@ int totalLineas(){
     return contador;
 }
 
+void paraEspia(){
+    int *p = (int *)shm;
+    p = p + 603;
+    *p = cantidadThreads;
+    p++;
+    for(int i = 0; i < cantidadThreads ; i++){
+        *p = variablesThreads[i][0]; //id
+        p++;
+        *p = variablesThreads[i][2]; //estado
+        p++;
+    }
+}
+
 void *accionThread(void *pointer){
     int idThread = (intptr_t) pointer; //id local en el array de 100
     int pID = variablesThreads[idThread][0]; //id verdadero
     int lineaActual = 0;
     int lineas = totalLineas();
     //lineas--;
+    paraEspia();
     while(getBandera() == 1){
         variablesThreads[idThread][2] = 2; //ponemos estado bloqueado
         //sem_wait(semaphore);
+        paraEspia();
         variablesThreads[idThread][2] = 0; //ponemos estado leyendo
+        paraEspia();
         if (algoQueLeer()){
             lineaActual = rand() % lineas; //random de 0 a total de lineas
             printf("--------------------------------------------%d\n",lineaActual);
@@ -149,6 +166,7 @@ void *accionThread(void *pointer){
         imprimirArchivo();
         //sem_post(semaphore);
         variablesThreads[idThread][2] = 1; //ponemos estado dormido
+        paraEspia();
         sleep(tiempoDormido);
     }
     cantidadThreadsRestantes--;
