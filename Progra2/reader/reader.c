@@ -166,6 +166,7 @@ void *accionThread(void *pointer){
             sem_wait(semaphoreResource); //lock del recurso compartido
             if(getBandera() != 1){
                 sem_post(semaphoreResource);
+                pthread_mutex_unlock(&counter);
                 break;
             }
         }

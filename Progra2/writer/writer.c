@@ -147,6 +147,7 @@ void *accionThread(void *pointer){
 
         sem_wait(semaphoreResource);
         if(getBandera() != 1){
+            sem_post(semaphoreReadTry);
             sem_post(semaphoreResource);
             break;
         }

@@ -64,6 +64,9 @@ void imprimirArchivo();
 void escribirLinea(int linea, int idProceso);
 void escribirArchivo();
 int iniciarSemaforos();
+int getLecturaSeguida();
+void decLecturaSeguida();
+void espiaSync();
 
 
 void menu(){
@@ -99,6 +102,18 @@ void setLecturaSeguida(){
     int *p = (int *)shm;
     p++;//nos movemos hacia arriba
     *p = *p + 1;
+}
+
+void decLecturaSeguida(){
+    int *p = (int *)shm;
+    p++;//nos movemos hacia arriba
+    *p = *p - 1;
+}
+
+int getLecturaSeguida(){
+    int *p = (int *)shm;
+    p++;//nos movemos hacia arriba
+    return *p;
 }
 
 int algoQueLeer(){
@@ -148,19 +163,24 @@ void paraEspia(){
     }
 }
 
+void espiaSync(){
+    pthread_mutex_lock(&memoriaEspia);
+        paraEspia();
+    pthread_mutex_unlock(&memoriaEspia);
+}
+
 void *accionThread(void *pointer){
     int idThread = (intptr_t) pointer; //id local en el array de 100
     int pID = variablesThreads[idThread][0]; //id verdadero
     int lineaActual = 0;
     int lineas = totalLineas();
+    int flush = 0; 
     //lineas--;
     paraEspia();
     while(getBandera() == 1){
         variablesThreads[idThread][2] = 2; //ponemos estado bloqueado
-        //sem_wait(semaphore);
-        pthread_mutex_lock(&memoriaEspia);
-            paraEspia();
-        pthread_mutex_unlock(&memoriaEspia);
+
+        espiaSync();
 
         pthread_mutex_lock(&counter);
         cantReaderEgoistas++;
@@ -174,16 +194,20 @@ void *accionThread(void *pointer){
         }
         pthread_mutex_unlock(&counter);
 
-
         sem_wait(semaphoreResource);
         if(getBandera() != 1){
+            sem_post(semaphoreReadTry);
             sem_post(semaphoreResource);
             break;
         }
 
+        if(getLecturaSeguida() == 3){
+            flush = 1;
+        }
+
         variablesThreads[idThread][2] = 0; //ponemos estado leyendo
         paraEspia();
-        if (algoQueLeer()){
+        if (algoQueLeer() && flush != 1){
             lineaActual = rand() % lineas; //random de 0 a total de lineas
             printf("--------------------------------------------%d\n",lineaActual);
             if(hayAlgo(lineaActual)){
@@ -200,15 +224,18 @@ void *accionThread(void *pointer){
         cantReaderEgoistas--;
         if(cantReaderEgoistas == 0){
             sem_post(semaphoreReadTry);
+            if(flush){
+                 decLecturaSeguida();
+                flush = 0;
+            }
         }
+
         pthread_mutex_unlock(&counter);
 
 
         variablesThreads[idThread][2] = 1; //ponemos estado dormido
 
-        pthread_mutex_lock(&memoriaEspia);
-            paraEspia();
-        pthread_mutex_unlock(&memoriaEspia);
+        espiaSync();
 
         sleep(tiempoDormido);
     }
