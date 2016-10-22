@@ -7,8 +7,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-//Variables Globales
-char SEM_GEN[] = "gen";
+//Semaforos
+char SEM_readTry[] = "readTry";
+char SEM_resource[] = "resource";
 
 int main();
 int devolverMemoria();
@@ -23,14 +24,26 @@ int devolverMemoria(){
     int shmid; /* return value from shmget() */ 
     char *shm; //apunta al inicio de memoria compartida
     char *s;
-    sem_t *semaphore;
+    sem_t *semaphoreReadTry;
+    sem_t *semaphoreResource;
 
-    semaphore = sem_open(SEM_GEN,0,0644,0);
-    if(semaphore == SEM_FAILED){
+
+    //Release Semaphores
+    semaphoreReadTry = sem_open(SEM_readTry,0,0644,0);
+    if(semaphoreReadTry == SEM_FAILED){
         perror("unable to create semaphore");
-        sem_unlink(SEM_GEN);
+        sem_unlink(SEM_readTry);
         exit(-1);
     }
+
+    semaphoreResource = sem_open(SEM_resource,0,0644,0);
+    if(semaphoreResource == SEM_FAILED){
+        perror("unable to create semaphore");
+        sem_unlink(SEM_resource);
+        exit(-1);
+    }
+
+    //Release Shared Memory
 
     if ((shmid = shmget(key, 10, IPC_CREAT | 0666)) < 0) {
         perror("shmget");
@@ -63,8 +76,12 @@ int devolverMemoria(){
     }
 
 
-    sem_close(semaphore);
-    sem_unlink(SEM_GEN);
+    sem_close(semaphoreReadTry);
+    sem_unlink(SEM_readTry);
+
+    sem_close(semaphoreResource);
+    sem_unlink(SEM_resource);
+    
     printf("Memoria limpiada \n");
     exit(0);
 }

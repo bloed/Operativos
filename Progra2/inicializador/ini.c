@@ -10,10 +10,13 @@
 #include <fcntl.h>
 
 //Variables Globales
-char SEM_GEN[] = "gen";
 char numeroLineas[3];
 int cantidadBytes;
 int bytesLinea = 66;//cada línea será de 66 bytes.
+
+//Semaforos
+char SEM_readTry[] = "readTry";
+char SEM_resource[] = "resource";
 
 int caca[4];
 
@@ -47,15 +50,26 @@ int pedirMemoria(int bytes){
 	size_t size = bytes; /* size to be passed to shmget() */ 
 	char *shm; //apunta al inicio de memoria compartida
 	char *s;
-    sem_t *semaphore;
+  sem_t *semaphoreReadTry;
+  sem_t *semaphoreResource;
 
-    //crate & initialize existing semaphore
-    semaphore = sem_open(SEM_GEN,O_CREAT,0644,1);
-    if(semaphore == SEM_FAILED){
-        perror("unable to create semaphore");
-        sem_unlink(SEM_GEN);
-        exit(-1);
-    }
+  //crate & initialize existing semaphores
+
+  semaphoreReadTry = sem_open(SEM_readTry,O_CREAT,0644,1);
+  if(semaphoreReadTry == SEM_FAILED){
+       perror("unable to create semaphore");
+       sem_unlink(SEM_readTry);
+       exit(-1);
+  }
+
+  semaphoreResource = sem_open(SEM_resource,O_CREAT,0644,1);
+  if(semaphoreResource== SEM_FAILED){
+       perror("unable to create semaphore");
+       sem_unlink(SEM_resource);
+       exit(-1);
+  }
+
+  //get shared memory
 
 	if ((shmid = shmget(key, size, IPC_CREAT | 0666)) < 0) {
         perror("shmget");

@@ -26,10 +26,6 @@ int shmid;
 key_t key = 666; //Helo
 char *shm; //apunta al inicio de memoria compartida
 
-sem_t *semaphore;
-char SEM_GEN[] = "gen";
-
-
 int main();
 void menu();
 int getBandera();
@@ -102,12 +98,6 @@ void imprimirArchivo(){
 
 int main(){
 
-    semaphore = sem_open(SEM_GEN,0,0644,0);
-    if(semaphore == SEM_FAILED){
-        perror("unable to create semaphore");
-        sem_unlink(SEM_GEN);
-        exit(-1);
-    }
     /*
      * Locate the segment. Si existe falla.
      */
@@ -135,7 +125,7 @@ int main(){
             getEstado(3);
         }
         if (opcion == 2){//estado de los readers
-            //getEstado(303);
+            getEstado(303);
         }
         if (opcion == 3){//estado de los readerEgoistas
             getEstado(603);

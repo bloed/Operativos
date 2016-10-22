@@ -17,17 +17,23 @@
 int cantidadThreads;
 int tiempoDormido;
 int tiempoLeyendo;
+int cantReaderEgoistas;
 char scantidadEscritores[2];
-char stiempoDormido[2];
-char stiempoLeyendo[2];
+char stiempoDormido[3];
+char stiempoLeyendo[3];
 char mensajeBitacora[152];//usado para el mensaje para escribir en bitácora
 
 int shmid;
 key_t key = 666; //Helo
 char *shm; //apunta al inicio de memoria compartida
 
-sem_t *semaphore;
-char SEM_GEN[] = "gen";
+//Semaforos
+char SEM_readTry[] = "readTry";
+char SEM_resource[] = "resource";
+sem_t *semaphoreReadTry;
+sem_t *semaphoreResource;
+pthread_mutex_t memoriaEspia;
+pthread_mutex_t counter;
 
 pthread_t threads[100];
 int contadorThreads = 0;
@@ -57,6 +63,7 @@ void *accionThread(void *pointer);
 void imprimirArchivo();
 void escribirLinea(int linea, int idProceso);
 void escribirArchivo();
+int iniciarSemaforos();
 
 
 void menu(){
@@ -151,7 +158,29 @@ void *accionThread(void *pointer){
     while(getBandera() == 1){
         variablesThreads[idThread][2] = 2; //ponemos estado bloqueado
         //sem_wait(semaphore);
-        paraEspia();
+        pthread_mutex_lock(&memoriaEspia);
+            paraEspia();
+        pthread_mutex_unlock(&memoriaEspia);
+
+        pthread_mutex_lock(&counter);
+        cantReaderEgoistas++;
+        if(cantReaderEgoistas == 1){
+            sem_wait(semaphoreReadTry);
+            if(getBandera() != 1){
+                sem_post(semaphoreReadTry);
+                pthread_mutex_unlock(&counter);
+                break;
+            }
+        }
+        pthread_mutex_unlock(&counter);
+
+
+        sem_wait(semaphoreResource);
+        if(getBandera() != 1){
+            sem_post(semaphoreResource);
+            break;
+        }
+
         variablesThreads[idThread][2] = 0; //ponemos estado leyendo
         paraEspia();
         if (algoQueLeer()){
@@ -164,9 +193,23 @@ void *accionThread(void *pointer){
             }
         }
         imprimirArchivo();
-        //sem_post(semaphore);
+
+        sem_post(semaphoreResource);
+
+        pthread_mutex_lock(&counter);
+        cantReaderEgoistas--;
+        if(cantReaderEgoistas == 0){
+            sem_post(semaphoreReadTry);
+        }
+        pthread_mutex_unlock(&counter);
+
+
         variablesThreads[idThread][2] = 1; //ponemos estado dormido
-        paraEspia();
+
+        pthread_mutex_lock(&memoriaEspia);
+            paraEspia();
+        pthread_mutex_unlock(&memoriaEspia);
+
         sleep(tiempoDormido);
     }
     cantidadThreadsRestantes--;
@@ -232,15 +275,41 @@ void escribirArchivo(){
     fclose(f);
 }
 
+int iniciarSemaforos(){
+
+    if (pthread_mutex_init(&memoriaEspia, NULL) != 0)
+    {
+        printf("\n mutex memoriaEspia init failed\n");
+        return 1;
+    }
+
+    if (pthread_mutex_init(&counter, NULL) != 0)
+    {
+        printf("\n mutex counter init failed\n");
+        return 1;
+    }
+
+    semaphoreReadTry = sem_open(SEM_readTry,0,0644,0);
+    if(semaphoreReadTry == SEM_FAILED){
+        perror("unable to create semaphore");
+        sem_unlink(SEM_readTry);
+        exit(-1);
+    }
+
+    semaphoreResource = sem_open(SEM_resource,0,0644,0);
+    if(semaphoreResource == SEM_FAILED){
+        perror("unable to create semaphore");
+        sem_unlink(SEM_resource);
+        exit(-1);
+    }
+
+}
+
 int main(){
     menu();
 
-    semaphore = sem_open(SEM_GEN,0,0644,0);
-    if(semaphore == SEM_FAILED){
-        perror("unable to create semaphore");
-        sem_unlink(SEM_GEN);
-        exit(-1);
-    }
+    iniciarSemaforos();
+
     /*
      * Locate the segment. Si existe falla.
      */
