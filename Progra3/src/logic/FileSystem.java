@@ -21,32 +21,87 @@ public class FileSystem {
   
   public String action(String action){
     //switch cochino con todas las acciones
+    String nombre;
     switch (action){
     case "file":
       System.out.println("Ingresa el nombre del archivo:");
-      String nombre = Main.getInputString();
+      nombre = Main.getInputString();
       System.out.println("Ingresa la extensión del archivo:");
       String extension = Main.getInputString();
       System.out.println("Ingresa el contenido del archivo:");
       String contenido = Main.getInputString();
       return crearArchivo(nombre, extension, contenido);
     case "mkdir":
-      return "Se ha creado un directorio.";
+      System.out.println("Ingresa el nombre del directorio:");
+      nombre = Main.getInputString();
+      return crearDirectorio(nombre);
+    case "cambiardir":
+      System.out.println("Ingresa al directorio que se quiere ir. Ej.: c://root/directorio o directorio o ../directorio :");
+      nombre = Main.getInputString();
+      return cambiarDirectorio(nombre);
+    case "listadir":
+      return actual.listaDir("  ");
+    case "tree":
+      tree();
+      return "";
     default:
       return "Se ha ingresado una accion inexistente.";
     }
   }
   
   public String crearArchivo(String pNombre, String pExtension, String pContenido){
-    Nodo archivo = new Nodo("archivo", pNombre, pExtension, pContenido, actual);
-    String resultado = disco.asignarArchivo(archivo);
-    if (resultado.equals("Archivo Creado.")){
-      actual.agregarHijo(archivo);
-      actual = archivo;
+    if(actual.tieneArchivo(pNombre, pExtension) == null){
+      Nodo archivo = new Nodo("archivo", pNombre, pExtension, pContenido, actual);
+      String resultado = disco.asignarArchivo(archivo);
+      if (resultado.equals("Archivo Creado.")){
+        actual.agregarHijo(archivo);
+        //actual = archivo;
+      }
+      return resultado;
     }
-    disco.toDiscoFisico();
-    return resultado;
+    else{
+      return "Ya existe un archivo con ese nombre y extensión.";
+    }
   }
-
+  
+  public String crearDirectorio(String pNombre){
+    if(actual.tieneDirectorio(pNombre) == null){
+      Nodo directorio = new Nodo("dir", pNombre, "", "", actual);
+      actual.agregarHijo(directorio);
+      //actual = directorio;
+      return "Directorio creado";
+    }
+    else{
+      return "Ya existe un directorio con ese nombre.";
+    }
+  }
+  public String cambiarDirectorio(String path){
+    Nodo resultado = actual.cambiarPath(path, disco.getRoot());
+    if (resultado == null){
+      return "Path incorrecto. No se encontró un directorio a ese path.";
+    }
+    else{
+      actual = resultado;
+    }
+    return "";
+  }
+  
+  public String tree(){
+    treeAUX("", disco.getRoot());    
+    return "";
+  }
+  private void treeAUX(String nivel, Nodo actual){
+    if (actual == null){//obvio los archivos no aplica
+      return;
+    }
+    System.out.println(nivel + actual.getNombre() + "." + actual.getExtension());
+    if (actual.getTipo().equals("archivo")){//obvio los archivos no aplica
+      return;
+    }
+    for(Nodo hijo : actual.getHijos()){
+      //se debe llamar recursivamente para cada hijo
+      treeAUX(nivel + "  ", hijo);
+    }
+  }
 
 }
