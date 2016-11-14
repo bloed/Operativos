@@ -28,6 +28,7 @@ public class Main {
       }
       result = fileSystem.action(s.toLowerCase());
       System.out.println(result);
+      discoVirtual.toDiscoFisico();
     }
     System.out.println("Revisar archivo en disco!");
   }

@@ -1,6 +1,9 @@
 package logic;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class Nodo {
 
@@ -12,6 +15,8 @@ public class Nodo {
   private ArrayList<Nodo> hijos;
   private ArrayList<Sector> sectores;//contiene los sectores tambien. de 1 a N.
   private Nodo padre;
+  String fechaCreacion;
+  String fechaModificacion;
   
   public Nodo(String pTipo, String pNombre,String pExtension, String pContenido,Nodo pPadre) {
     tipo = pTipo;
@@ -22,6 +27,8 @@ public class Nodo {
     padre = pPadre;
     contenido = pContenido;
     tamano = contenido.length();
+    fechaCreacion = getFechaActual();
+    fechaModificacion = getFechaActual();
   }
   
   public void setPadre(Nodo pPadre){
@@ -154,7 +161,23 @@ public class Nodo {
     pNodo.setPadre(this);
   }
   
+  public String getFechaActual(){
+    Calendar cal = Calendar.getInstance();
+    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    return dateFormat.format(cal.getTime());
+  }
+  
   public String toString(){
     return tipo + " | " + nombre + "." + extension;
+  }
+  
+  public String verPropiedades(){
+    String resultado = "";//aplica solo para archivos
+    if (tipo.equals("archivo")){
+      resultado += nombre + "." + extension + "\n";
+      resultado += "Fecha de creación : " + fechaCreacion + ". Fecha modificación: " + fechaModificacion;
+      resultado += ".\n" + "Tamaño: " + contenido.length() + " bytes.";
+    }
+    return resultado;
   }
 }

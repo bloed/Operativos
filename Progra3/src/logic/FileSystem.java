@@ -22,12 +22,13 @@ public class FileSystem {
   public String action(String action){
     //switch cochino con todas las acciones
     String nombre;
+    String extension;
     switch (action){
     case "file":
       System.out.println("Ingresa el nombre del archivo:");
       nombre = Main.getInputString();
       System.out.println("Ingresa la extensión del archivo:");
-      String extension = Main.getInputString();
+      extension = Main.getInputString();
       System.out.println("Ingresa el contenido del archivo:");
       String contenido = Main.getInputString();
       return crearArchivo(nombre, extension, contenido);
@@ -44,6 +45,13 @@ public class FileSystem {
     case "tree":
       tree();
       return "";
+    case "verpropiedades":
+      System.out.println("Ingresa el nombre del archivo:");
+      nombre = Main.getInputString();
+      System.out.println("Ingresa la extensión del archivo:");
+      extension = Main.getInputString();
+      Nodo archivo = actual.tieneArchivo(nombre, extension);
+      return archivo.verPropiedades();
     default:
       return "Se ha ingresado una accion inexistente.";
     }

@@ -1,5 +1,6 @@
 package logic;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class DiscoVirtual {
@@ -25,7 +26,7 @@ public class DiscoVirtual {
   
   private void inicializarSectores(){
     for(int i = 0; i < cantidadSectores; i++){
-      sectores.add(new Sector(tamanoSectores));
+      sectores.add(new Sector(tamanoSectores,"Vacio"));
     }
   }
   
@@ -68,11 +69,17 @@ public class DiscoVirtual {
   
   public void toDiscoFisico(){
     //debe pasar Todo lo que esta en el logico al disco.
-    String resultado = "";
-    for(Sector s: sectores){
-      resultado += s.getContenido() + "\n";
+    try{
+      PrintWriter writer = new PrintWriter("Disco.txt", "UTF-8");
+      for(Sector s: sectores){
+        //resultado += s.getContenido() + "\n";
+        writer.println(s.getContenido());
+      }
+      writer.close();
+    } 
+    catch (Exception e) {
+       System.out.println(e.getMessage());
     }
-    System.out.println(resultado);
   }
 
 }

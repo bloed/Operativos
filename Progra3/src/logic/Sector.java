@@ -12,10 +12,10 @@ public class Sector {
   
   public static int contador = 0;
   
-  public Sector(int pTamano) {
+  public Sector(int pTamano, String pContenido) {
     id = contador;
     contador++;
-    contenido = "";
+    contenido = pContenido;
     usado = false;
   }
   
