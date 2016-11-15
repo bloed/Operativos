@@ -48,6 +48,7 @@ public class DiscoVirtual {
             //conseguimos los primeros bytes
             s.setArchivo(pArchivo,contenido.substring(0, Math.min(contenido.length(), tamanoSectores)));
             contenido = contenido.substring(Math.min(contenido.length(), tamanoSectores),contenido.length());
+            pArchivo.agregarSector(s);
         }
       }
       return "Archivo Creado.";

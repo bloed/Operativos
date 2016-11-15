@@ -23,6 +23,7 @@ public class FileSystem {
     //switch cochino con todas las acciones
     String nombre;
     String extension;
+    Nodo archivo;
     switch (action){
     case "file":
       System.out.println("Ingresa el nombre del archivo:");
@@ -50,8 +51,20 @@ public class FileSystem {
       nombre = Main.getInputString();
       System.out.println("Ingresa la extensión del archivo:");
       extension = Main.getInputString();
-      Nodo archivo = actual.tieneArchivo(nombre, extension);
+      archivo = actual.tieneArchivo(nombre, extension);
       return archivo.verPropiedades();
+    case "contfile":
+      System.out.println("Ingresa el nombre del archivo:");
+      nombre = Main.getInputString();
+      System.out.println("Ingresa la extensión del archivo:");
+      extension = Main.getInputString();
+      archivo = actual.tieneArchivo(nombre, extension);
+      if(archivo == null){
+        return "No se encontro un archivo con esa extensión.";
+      }
+      else{
+        return archivo.getContenido();
+      }
     default:
       return "Se ha ingresado una accion inexistente.";
     }

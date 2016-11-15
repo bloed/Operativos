@@ -53,6 +53,12 @@ public class Nodo {
   public String getContenido(){
     return contenido;
   }
+  public ArrayList<Sector> getSectores(){
+    return sectores;
+  }
+  public void agregarSector(Sector pSector){
+    sectores.add(pSector);
+  }
   
   public String getPath(){
     return getPathAux("", this);
