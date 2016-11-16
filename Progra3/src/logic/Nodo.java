@@ -53,6 +53,9 @@ public class Nodo {
   public String getContenido(){
     return contenido;
   }
+  public void setContenido(String pContenido){
+    contenido = pContenido;
+  }
   public ArrayList<Sector> getSectores(){
     return sectores;
   }
@@ -60,10 +63,21 @@ public class Nodo {
     sectores.add(pSector);
   }
   
+  public void quitaSectores(){
+    //elimina el archivo del disco lógico (y por lo tanto del físico)
+    for(Sector s: sectores){
+      s.setContenido("Vacio");
+      s.setArchivo(null);
+      s.setUsado(false);
+    }
+    sectores.clear();
+  }
+  
   public String getPath(){
     return getPathAux("", this);
   }
   private String getPathAux(String resultado, Nodo actual){
+    //va formando un path, hasta llegar a root
     if (actual == null){
       resultado = "c://" + resultado;
       return resultado;

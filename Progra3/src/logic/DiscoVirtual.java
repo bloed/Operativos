@@ -24,6 +24,10 @@ public class DiscoVirtual {
     return root;
   }
   
+  public Integer getTamanoSectores(){
+    return tamanoSectores;
+  }
+  
   private void inicializarSectores(){
     for(int i = 0; i < cantidadSectores; i++){
       sectores.add(new Sector(tamanoSectores,"Vacio"));
@@ -59,6 +63,9 @@ public class DiscoVirtual {
   }
   public Boolean haySectores(int cantidad){
     //devuelve si hay tal cantida de sectores libres en el disco
+    if (cantidad <= 0){
+      return true;
+    }
     int cantidadEncontrada = 0;
     for(Sector s : sectores){
       if(!s.estaUsado()){

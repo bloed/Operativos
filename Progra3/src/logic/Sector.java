@@ -17,6 +17,11 @@ public class Sector {
     contador++;
     contenido = pContenido;
     usado = false;
+    archivo = null;
+  }
+  
+  public void setContenido(String pContenido){
+    contenido = pContenido;
   }
   
   public void setArchivo(Nodo pArchivo){
@@ -31,6 +36,10 @@ public class Sector {
     archivo = pArchivo;
     contenido = informacion.replace("\n", "").replace("\r", "");
     usado = true;
+  }
+  
+  public void setUsado(Boolean pUsado){
+    usado = pUsado;
   }
   public Boolean estaUsado(){
     return usado;
