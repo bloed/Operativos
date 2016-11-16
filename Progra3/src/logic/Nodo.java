@@ -63,6 +63,26 @@ public class Nodo {
     sectores.add(pSector);
   }
   
+  public void setNombre(String pNombre){
+    nombre = pNombre;
+  }
+  
+  public void setExtension (String pExtension){
+    extension = pExtension;
+  }
+  
+  public void removerHijo(Nodo hijo){
+    hijos.remove(hijo);
+  }
+  
+  public void removerTodosLosHijos(){
+    hijos.clear();
+  }
+  
+  public void setFechaModificacion(){
+    fechaModificacion = getFechaActual();
+  }
+  
   public void quitaSectores(){
     //elimina el archivo del disco lógico (y por lo tanto del físico)
     for(Sector s: sectores){
@@ -71,6 +91,24 @@ public class Nodo {
       s.setUsado(false);
     }
     sectores.clear();
+  }
+  
+  public void quitaSectoresRecursivo(){
+    //quita todos los sectores del disco, para todos los hijos del directorio
+    if (tipo.equals("dir")){
+      quitaSectoresRecursivoAUX(this);
+    }
+  }
+  
+  private void quitaSectoresRecursivoAUX(Nodo actual){
+    if(actual.getTipo().equals("archivo")){
+      actual.quitaSectores();
+    }
+    else{//es un directorio, hay que llamar recursivamente para los hijos
+      for(Nodo nodo: actual.getHijos()){
+        quitaSectoresRecursivoAUX(nodo);
+      }
+    }
   }
   
   public String getPath(){
@@ -97,6 +135,13 @@ public class Nodo {
       }
     }
     return null;
+  }
+  
+  public Boolean tieneHijos(){
+    if(tipo.equals("dir")){
+      return hijos.size() > 0;
+    }
+    return false;
   }
   
   public Nodo tieneArchivo(String pNombre, String pExtension){
@@ -132,7 +177,7 @@ public class Nodo {
   }
   
   public Nodo cambiarPathAUX(String path, Nodo actual){
-    //System.out.println(path);
+    //System.out.println(path); Solo llegan directorios
     if(actual == null){
       return null;
     }

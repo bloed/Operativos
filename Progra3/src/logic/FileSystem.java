@@ -26,8 +26,10 @@ public class FileSystem {
     String nombre = "";
     String extension = "";
     Nodo archivo;
+    Nodo directorio;
     String path = "";
     String resultado = "";
+    String opcion = "n";
     switch (action){
     case "file":
       System.out.println("Ingresa el nombre del archivo:");
@@ -118,6 +120,7 @@ public class FileSystem {
             //parte de la idea de que lo actual ya esta "reservado" para el archivo, puedee que necesite menos, más, o igual
             archivo.quitaSectores();
             archivo.setContenido(contenido);
+            archivo.setFechaModificacion();//actualizamos la fecha de modificacion
             return disco.asignarArchivo(archivo);//aqui sabemos que de fijo ya hay espacio
           }
           else{
@@ -148,13 +151,133 @@ public class FileSystem {
           return archivo.getContenido();
         }
       }
+    
+    case "remove":
+      Boolean control = true;
+      while(control){
+        System.out.println("Ingresa el nombre del archivo o directorio (debe estar en el directorio actual):");
+        nombre = Main.getInputString();
+        System.out.println("Ingresa la extensión del archivo (ignorar si es un directorio):");
+        extension = Main.getInputString();
+        if (extension.equals("")){//es un directorio
+          directorio = actual.tieneDirectorio(nombre);
+          if(directorio == null){
+            System.out.println("No se encontro un directorio directorio actual.");
+          }
+          else{
+            //hay que ver si se quiere recursivo o no.
+            if(directorio.tieneHijos()){
+              System.out.println("El directorio tiene hijos, ¿Desea borrar recursivamente?  (y/n):");
+              opcion = Main.getInputString();
+              if(opcion.equals("y")){
+                directorio.quitaSectoresRecursivo();
+                actual.removerHijo(directorio);
+                System.out.println("Directorio borrado junto con sus hijos.");
+              }
+              else{
+                System.out.println("Directorio no fue borrado.");
+              }
+            }
+            else{
+              actual.removerHijo(directorio);
+              System.out.println("Directorio borrado. No tenía hijos entonces se podía borrar directamente.");
+            }
+          }
+        }
+        else{ 
+          archivo = actual.tieneArchivo(nombre, extension);
+          if(archivo == null){
+            System.out.println("No se encontro un archivo con esa extensión en el directorio actual.");
+          }
+          else{
+            archivo.quitaSectores();//le quitamos los sectores en el disco
+            actual.removerHijo(archivo);//quitamos el hijo del padre
+            System.out.println("Archivo borrado correctamente.");
+          }
+        }
+        System.out.println("¿Desea seguir borrando archivos/directorios?  (y/n):");
+        opcion = Main.getInputString();
+        if (opcion.equals("n")){
+          control = false;
+        }
+      }
+      return "";
       
+    case "mover":
+      Nodo directorioOrigen = null;
+      Nodo directorioDestino = null;
+      Nodo archivoOrigen = null;
+      System.out.println("Ingresa el path de origen a un directorio (ya sea relativo o absoluto): (ignorar si es para el path actual)");
+      String pathOrigen = Main.getInputString();
+      if(pathOrigen.equals("")){
+        directorioOrigen = actual;
+      }
+      else{
+        directorioOrigen = actual.cambiarPath(pathOrigen, disco.getRoot());
+      }
+      
+      System.out.println("Ingresa el nombre del archivo o directorio origen:");
+      nombre = Main.getInputString();
+      System.out.println("Ingresa la extensión del archivo origen (ignorar si es un directorio):");
+      extension = Main.getInputString();
+      
+      
+      System.out.println("Ingresa el path de destino a un directorio (ya sea relativo o absoluto): (ignorar si es para el path actual)");
+      String pathDestino = Main.getInputString();
+      if(pathDestino.equals("")){
+        directorioDestino = actual;
+      }
+      else{
+        directorioDestino = actual.cambiarPath(pathDestino, disco.getRoot());
+      } 
+      
+      System.out.println("Ingresa el nombre del archivo o directorio para el path destino:");
+      String nombreDestino = Main.getInputString();
+      System.out.println("Ingresa la extensión del archivo destino (ignorar si es un directorio):");
+      String extensionDestino = Main.getInputString();
+      
+      if (directorioOrigen == null){
+        return "Directorio de origen inexistente";
+      }
+      if (directorioDestino == null){
+        return "Directorio de destino inexistente";
+      }
+      
+      if (extension.equals("")){//es un directorio
+        archivoOrigen = directorioOrigen.tieneDirectorio(nombre);
+      }
+      else{
+        archivoOrigen = directorioOrigen.tieneArchivo(nombre, extension);
+      }
+      
+      if (archivoOrigen == null){
+        return "Archivo en el directorio de origen, inexistente";
+      }
+      
+      if (extensionDestino.equals("")){//es un directorio
+        if(directorioDestino.tieneDirectorio(nombreDestino) != null){
+          return "Ya existe un directorio con ese nombre en el destino";
+        }
+      }
+      else{
+        if(directorioDestino.tieneArchivo(nombreDestino, extensionDestino) != null){
+          return "Ya existe un archivo con ese nombre y extension en el destino";
+        }
+      }
+      
+      archivoOrigen.setNombre(nombreDestino);
+      archivoOrigen.setExtension(extensionDestino);
+      directorioDestino.agregarHijo(archivoOrigen);
+      directorioOrigen.removerHijo(archivoOrigen);
+      return "Movida realizada!";
+
     default:
       return "Se ha ingresado una accion inexistente.";
     }
   }
   
   public String crearArchivo(String pNombre, String pExtension, String pContenido){
+    String opcion = "";
     if(actual.tieneArchivo(pNombre, pExtension) == null){
       Nodo archivo = new Nodo("archivo", pNombre, pExtension, pContenido, actual);
       String resultado = disco.asignarArchivo(archivo);
@@ -165,7 +288,33 @@ public class FileSystem {
       return resultado;
     }
     else{
-      return "Ya existe un archivo con ese nombre y extensión.";
+      //return "Ya existe un archivo con ese nombre y extensión.";
+      System.out.println("Ya existe un archivo con ese nombre y extensión, ¿desea reemplazarlo? (y/n)");
+      opcion = Main.getInputString();
+      if (opcion.equals("y")){
+        Nodo archivoExistente = actual.tieneArchivo(pNombre, pExtension);
+
+        Integer sectoresActuales = (archivoExistente.getContenido().length() + tamanoSectores - 1) / tamanoSectores;
+        Integer sectoresAdicionales = (pContenido.length() + tamanoSectores - 1) / tamanoSectores;
+        System.out.println("Sectores actuales : " + sectoresActuales);
+        System.out.println("Sectores adicionales : " + sectoresAdicionales);
+        
+        if(disco.haySectores(sectoresAdicionales - sectoresActuales)){
+          //primero vemos si hay espacio para el nuevo archivo; tomando en cuenta lo que tenemos ahora
+          //parte de la idea de que lo actual ya esta "reservado" para el archivo, puedee que necesite menos, más, o igual
+          archivoExistente.quitaSectores();
+          actual.removerHijo(archivoExistente);//quitamos el hijo del padre
+          Nodo nuevoArchivo = new Nodo("archivo", pNombre, pExtension, pContenido, actual);
+          actual.agregarHijo(nuevoArchivo);
+          return disco.asignarArchivo(nuevoArchivo);//aqui sabemos que de fijo ya hay espacio
+        }
+        else{
+          return "No hay suficiente tamaño en disco para el nuevo archivo. No se reemplaza el existente";
+        }
+      }
+      else{
+        return "No se reemplaza el archivo existente.";
+      }
     }
   }
   
@@ -177,7 +326,20 @@ public class FileSystem {
       return "Directorio creado";
     }
     else{
-      return "Ya existe un directorio con ese nombre.";
+      Nodo directorio = actual.tieneDirectorio(pNombre);
+      System.out.println("Ya existe un archivo con ese nombre y extensión, ¿desea reemplazarlo (también se borrará los hijos si lo posee)? (y/n)");
+      String opcion = Main.getInputString();
+      if (opcion.equals("y")){
+        directorio.quitaSectoresRecursivo();
+        actual.removerHijo(directorio);
+        
+        Nodo directorioNuevo = new Nodo("dir", pNombre, "", "", actual);
+        actual.agregarHijo(directorioNuevo);
+        return "Nuevo directorio creado.";
+      }
+      else{
+        return "No se reemplaza el directorio";
+      }
     }
   }
   public String cambiarDirectorio(String path){
