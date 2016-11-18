@@ -1,5 +1,19 @@
 package logic;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
 public class FileSystem {
 
   
@@ -60,7 +74,7 @@ public class FileSystem {
       nombre = Main.getInputString();
       return cambiarDirectorio(nombre);
       
-    case "listadir":
+    case "listardir":
       return actual.listaDir("  ");
       
     case "tree":
@@ -271,9 +285,124 @@ public class FileSystem {
       directorioOrigen.removerHijo(archivoOrigen);
       return "Movida realizada!";
 
+    case "copy":
+        Nodo directorioOrigenCopy = null;
+        Nodo directorioDestinoCopy = null;
+        Nodo archivoOrigenCopy = null;
+        Boolean origenReal = false;
+        Boolean destinoReal = false;
+        
+        System.out.println("Ingresa el path de origen a un directorio (ya sea relativo o absoluto): (ignorar si es para el path actual)");
+        String pathOrigenCopy = Main.getInputString();
+        if(pathOrigenCopy.equals("")){
+          directorioOrigenCopy = actual;
+        }
+        else{
+          directorioOrigenCopy = actual.cambiarPath(pathOrigenCopy, disco.getRoot());
+          if (directorioOrigenCopy == null){
+              if(!validarReal(pathOrigenCopy)){
+            	  return "Directorio o archvio no encontrado";
+              }else{
+            	  pathOrigenCopy += "\\";
+            	  origenReal = true;
+              }
+          }
+        }
+        
+        System.out.println("Ingresa el nombre del archivo o directorio origen:");
+        nombre = Main.getInputString();
+        System.out.println("Ingresa la extensión del archivo origen (ignorar si es un directorio):");
+        extension = Main.getInputString();
+        if(origenReal){
+        	pathOrigenCopy += nombre;
+        	if(!extension.isEmpty())
+        		pathOrigenCopy += "."+ extension;
+        }
+        
+        
+        System.out.println("Ingresa el path de destino a un directorio (ya sea relativo o absoluto): (ignorar si es para el path actual)");
+        String pathDestinoCopy = Main.getInputString();
+        if(pathDestinoCopy.equals("")){
+          directorioDestinoCopy = actual;
+        }
+        else{
+          directorioDestinoCopy = actual.cambiarPath(pathDestinoCopy, disco.getRoot());
+          if (directorioDestinoCopy == null){
+              if(!validarReal(pathDestinoCopy)){
+            	  return "Directorio o archvio no encontrado";
+              }else{
+            	  pathDestinoCopy += "\\";
+            	  destinoReal = true;
+              }
+          }
+        } 
+        
+        if(origenReal){
+        	resultado = cambiarDirectorio(pathDestinoCopy);
+        	return copyRtoV(pathOrigenCopy);
+        	
+        }
+        else if(destinoReal){
+        	Nodo inicial = actual.tieneArchivo(nombre, extension);
+        	Boolean archivoCopy = true;
+        	if(inicial == null){
+        		inicial = actual.tieneDir(nombre);
+        		archivoCopy = false;
+        	}
+        	if(inicial == null){
+        		return "Archivo o directorio de origen no encontrado";
+        	}
+        	return copyVtoR(pathDestinoCopy, inicial, archivoCopy);
+        }else{
+        	Nodo inicial = actual.tieneArchivo(nombre, extension);
+        	Boolean archivoCopy = true;
+        	if(inicial == null){
+        		inicial = actual.tieneDir(nombre);
+        		archivoCopy = false;
+        	}
+        	if(inicial == null){
+        		return "Archivo o directorio de origen no encontrado";
+        	}
+        	return copyVtoV(inicial,directorioDestinoCopy);
+        }
+    case "find":
+    	System.out.println("Ingrese el termino a buscar, puede utilizar '*.doc' para extensiones");
+        String query = Main.getInputString();
+        Boolean extensionSearch = false;
+  	  	if(query.startsWith("*")){
+  	  		query = query.substring(1);
+  	  		extensionSearch = true;
+  	  	}
+  	  	return "Se obtuvieron :" + buscar(query, extensionSearch, disco.getRoot()) + " Resultado(s)";
+  	  	
+  	  	
     default:
       return "Se ha ingresado una accion inexistente.";
     }
+  }
+  
+  private int buscar(String query, Boolean extension, Nodo actual){
+	  int result = 0;
+      String completo = actual.getNombre();
+      if(actual.esArchivo())
+    	  completo +="."+ actual.getExtension();
+	  if(extension){
+		  if(completo.endsWith(query)){
+			  String path = actual.getPath();
+			  System.out.println(path.substring(0, path.length()-1)+"."+actual.getExtension());
+			  result ++;
+		  }
+	  }else{
+		  if(completo.contains(query)){
+			  String path = actual.getPath();
+			  System.out.println(path.substring(0, path.length()-1)+"."+actual.getExtension());
+			  result ++;
+		  }
+	  }
+	  for(Nodo hijo: actual.getHijos()){
+		  result += buscar(query,extension,hijo);
+	  }
+      return result;
   }
   
   public String crearArchivo(String pNombre, String pExtension, String pContenido){
@@ -370,5 +499,117 @@ public class FileSystem {
       treeAUX(nivel + "  ", hijo);
     }
   }
+  private String copyVtoR(String folderDestino, Nodo actualCopy, Boolean archivo){
+	  if(archivo){
+		  folderDestino += actualCopy.getNombre() + "." + actualCopy.getExtension();
+		  crearArchivoReal(folderDestino, actualCopy.getContenido());
+	  }else{
+		  crearDirectorioReal(folderDestino + actualCopy.getNombre());
+		  for(Nodo hijo : actualCopy.getHijos()){
+			  copyVtoR(folderDestino + actualCopy.getNombre() + "\\", hijo, hijo.esArchivo());
+		  }
+	  }
+	  return "Copy de Virutal a Real Listo";
+  }
+  private String copyVtoV(Nodo origen, Nodo destino){
+	  Nodo temp = (Nodo)copy(origen);
+	  destino.agregarHijo(temp);
+	  return "Copy de Virtual a Virtual Listo";
+  }
+  private String copyRtoV(String folder){
+	  File dirFile = new File(folder);
+	  File[] contents = dirFile.listFiles();
+	  String fileName;
+	  String extension = "";
+	  String content;
+	  
+	  if(dirFile.isDirectory()){
+		  System.out.println(dirFile.getName());
+		  crearDirectorio(dirFile.getName());
+		  cambiarDirectorio(dirFile.getName());
+		  for ( File f : contents) {
+			extension = "";
+			fileName = f.getName();
+			int i = fileName.lastIndexOf('.');
+			if (i >= 0) 
+			    extension = f.getName().substring(i+1);
+			
+			if(f.isDirectory()){
+				Nodo temp = this.actual;
+				copyRtoV(f.getAbsolutePath());
+				this.actual = temp;
+				
+			}else{ //es archivo
+				content = getAllContent(f.getAbsolutePath());
+				fileName = fileName.replaceFirst("[.][^.]+$", "");
+				crearArchivo(fileName,extension, content);
+			}
+		  }
+	  }else{
+		  fileName = dirFile.getName();
+		  int i = fileName.lastIndexOf('.');
+		  if (i >= 0)
+			  extension = fileName.substring(i+1);
+		  
+		  content = getAllContent(dirFile.getAbsolutePath());
+		  fileName = fileName.replaceFirst("[.][^.]+$", "");
+		  crearArchivo(fileName, extension, content);
+	  }
+	  return "Copy de Real Virtual listo";
+  }
+  private String getAllContent(String absolutePath){
+	  String content = "";
+	  try {
+		  content = new String(Files.readAllBytes(Paths.get(absolutePath)));
+	  } catch (IOException e) {
+		  System.out.println("Error de path o permisos Real");
+	  }
+	  System.out.println(content);
+	  return content;
+  }
+  private Boolean validarReal(String absolutePath){
+	  File file = new File(absolutePath);
+	  if(file.exists())
+		  return true;
+	  else
+		  return false;
+  }
+  private void crearArchivoReal(String path, String content){
+	  try{
+		    PrintWriter writer = new PrintWriter(path, "UTF-8");
+		    writer.println(content);
+		    writer.close();
+		} catch (Exception e) {
+		   System.out.println("Error de escritura real");
+		}
+  }
+  private void crearDirectorioReal(String path){
+	  new File(path).mkdir();
+  }
+  private Object copy(Object orig) {
+      Object obj = null;
+      try {
+          // Write the object out to a byte array
+          ByteArrayOutputStream bos = new ByteArrayOutputStream();
+          ObjectOutputStream out = new ObjectOutputStream(bos);
+          out.writeObject(orig);
+          out.flush();
+          out.close();
+
+          // Make an input stream from the byte array and read
+          // a copy of the object back in.
+          ObjectInputStream in = new ObjectInputStream(
+              new ByteArrayInputStream(bos.toByteArray()));
+          obj = in.readObject();
+      }
+      catch(IOException e) {
+          e.printStackTrace();
+      }
+      catch(ClassNotFoundException cnfe) {
+          cnfe.printStackTrace();
+      }
+      return obj;
+  }
+
 
 }

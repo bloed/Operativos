@@ -1,11 +1,12 @@
 package logic;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-public class Nodo {
+public class Nodo implements Serializable {
 
   private String tipo; //archivo o directorio, o root
   private String nombre;
@@ -153,6 +154,21 @@ public class Nodo {
       }
     }
     return null;
+  }
+  public Nodo tieneDir(String pNombre){
+	  for(Nodo hijo: hijos){
+		  if (hijo.getNombre().equals(pNombre) && !hijo.getTipo().equals("archivo")){
+			  return hijo;
+			  }
+	  }
+	  return null;
+  }
+  public Boolean esArchivo(){
+	  if(tipo.equals("archivo")){
+		  return true;
+	  }else{
+		  return false;
+	  }
   }
   
   public Nodo cambiarPath(String path, Nodo root){

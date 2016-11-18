@@ -1,6 +1,8 @@
 package logic;
 
-public class Sector {
+import java.io.Serializable;
+
+public class Sector implements Serializable {
   
   //representa un sector logico. lo ideal es que lo que esta aca sea exactamente igual al o que esta en disco.
 
