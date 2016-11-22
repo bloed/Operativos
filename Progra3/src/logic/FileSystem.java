@@ -339,7 +339,11 @@ public class FileSystem {
         
         if(origenReal){
         	resultado = cambiarDirectorio(pathDestinoCopy);
-        	return copyRtoV(pathOrigenCopy);
+        	String result = copyRtoV(pathOrigenCopy);
+        	if(result.equals("No hay espacio suficiente en disco.")){
+        		result = "No se pudieron copiar todos los archivos por espacio en el disco";
+        	}
+        	return result;
         	
         }
         else if(destinoReal){
@@ -363,7 +367,11 @@ public class FileSystem {
         	if(inicial == null){
         		return "Archivo o directorio de origen no encontrado";
         	}
-        	return copyVtoV(inicial,directorioDestinoCopy);
+        	String result = copyVtoV(inicial,directorioDestinoCopy, archivoCopy);
+        	if(result.equals("No hay espacio suficiente en disco.")){
+        		result = "No se pudieron copiar todos los archivos por espacio en el disco";
+        	}
+        	return result;
         }
     case "find":
     	System.out.println("Ingrese el termino a buscar, puede utilizar '*.doc' para extensiones");
@@ -511,10 +519,27 @@ public class FileSystem {
 	  }
 	  return "Copy de Virutal a Real Listo";
   }
-  private String copyVtoV(Nodo origen, Nodo destino){
-	  Nodo temp = (Nodo)copy(origen);
-	  destino.agregarHijo(temp);
-	  return "Copy de Virtual a Virtual Listo";
+  private String copyVtoV(Nodo origen, Nodo destino, Boolean archivo){
+	  if(archivo){
+		  Nodo act = this.actual;
+		  this.actual = destino;
+		  return crearArchivo(origen.getNombre(), origen.getExtension(), origen.getContenido());
+	  }else{
+		  Nodo temp = this.actual;
+		  this.actual = destino;
+		  crearDirectorio(origen.getNombre());
+		  cambiarDirectorio(origen.getNombre());
+		  for(Nodo hijo : origen.getHijos()){
+			  String result = copyVtoV(hijo,this.actual, hijo.esArchivo());
+			  if(result.equals("No hay espacio suficiente en disco.")){
+				  this.actual = temp;
+				  return "No hay espacio suficiente en disco.";
+			  }
+		  }
+		  this.actual = temp;
+	  }
+	  
+	  return "Copy de Virutal a Virtual Listo";
   }
   private String copyRtoV(String folder){
 	  File dirFile = new File(folder);
@@ -542,7 +567,10 @@ public class FileSystem {
 			}else{ //es archivo
 				content = getAllContent(f.getAbsolutePath());
 				fileName = fileName.replaceFirst("[.][^.]+$", "");
-				crearArchivo(fileName,extension, content);
+				String result = crearArchivo(fileName,extension, content);
+				if(result.equals("No hay espacio suficiente en disco.")){
+					return "No hay espacio suficiente en disco.";
+				}
 			}
 		  }
 	  }else{
@@ -553,7 +581,10 @@ public class FileSystem {
 		  
 		  content = getAllContent(dirFile.getAbsolutePath());
 		  fileName = fileName.replaceFirst("[.][^.]+$", "");
-		  crearArchivo(fileName, extension, content);
+		  String result = crearArchivo(fileName, extension, content);
+		  if(result.equals("No hay espacio suficiente en disco.")){
+			  return "No hay espacio suficiente en disco.";
+		  }
 	  }
 	  return "Copy de Real Virtual listo";
   }
@@ -564,7 +595,6 @@ public class FileSystem {
 	  } catch (IOException e) {
 		  System.out.println("Error de path o permisos Real");
 	  }
-	  System.out.println(content);
 	  return content;
   }
   private Boolean validarReal(String absolutePath){
